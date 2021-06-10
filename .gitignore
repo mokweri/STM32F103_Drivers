@@ -20,3 +20,4 @@ Debug
 
 # Locally stored "Eclipse launch configurations"
 *.launch
+STM32f103xx_drivers/.cproject
