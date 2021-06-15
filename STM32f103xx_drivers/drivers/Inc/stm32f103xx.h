@@ -67,6 +67,15 @@
 #define APB2PERIPH_BASEADDR						0x40010000U
 #define AHBPERIPH_BASEADDR						0x40020000U
 
+
+/*
+ * Base addresses of peripherals which are hanging on APB1 bus
+ * TODO : Complete for all other peripherals
+ */
+#define SPI2_BASEADDR					 (APB1PERIPH_BASEADDR + 0x3800)
+#define SPI3_BASEADDR					 (APB1PERIPH_BASEADDR + 0x3C00)
+
+
 /*
  * Base addresses of peripherals which are hanging on APB2 bus
  * TODO : Complete for all other peripherals
@@ -80,6 +89,8 @@
 #define AFIO_BASEADDR					 (APB2PERIPH_BASEADDR)
 
 #define EXTI_BASEADDR					 (APB2PERIPH_BASEADDR + 0x0400)
+
+#define SPI1_BASEADDR					 (APB2PERIPH_BASEADDR + 0x3000)
 
 /*
  * Base addresses of peripherals which are hanging on AHB bus
@@ -162,6 +173,23 @@ typedef struct
 } EXTI_RegDef_t;
 
 
+/*
+ * peripheral register definition structure for SPI
+ */
+typedef struct
+{
+	__vo uint32_t CR1;		/*SPI control register 1  			Address offset: 0x00 */
+	__vo uint32_t CR2;		/*SPI control register 2  			Address offset: 0x04 */
+	__vo uint32_t SR;		/*SPI status register	  			Address offset: 0x08 */
+	__vo uint32_t DR;		/*SPI Data register 	  			Address offset: 0x0C */
+	__vo uint32_t CRCPR;	/*SPI CRC polynomial register  		Address offset: 0x10 */
+	__vo uint32_t RXCRCR;	/*SPI RX CRC register		  		Address offset: 0x14 */
+	__vo uint32_t TXCRCR;	/*SPI TX CRC register		  		Address offset: 0x18 */
+	__vo uint32_t I2SCFGR;	/*SPI I2S configuration register	Address offset: 0x1C */
+	__vo uint32_t I2SPR;	/*SPI I2S prescaler register		Address offset: 0x20 */
+} SPI_RegDef_t;
+
+
 
 
 /*
@@ -179,6 +207,10 @@ typedef struct
 
 #define EXTI                ((EXTI_RegDef_t*)EXTI_BASEADDR)
 
+#define SPI1				((SPI_RegDef_t*)SPI1_BASEADDR)
+#define SPI2				((SPI_RegDef_t*)SPI2_BASEADDR)
+#define SPI3				((SPI_RegDef_t*)SPI3_BASEADDR)
+
 
 /*
  * Clock Enable Macros for GPIOx peripherals
@@ -195,6 +227,18 @@ typedef struct
 #define AFIOC_PCLK_EN()		(RCC->APB2ENR |= (1 << 4) | (1 << 0))
 #define AFIOD_PCLK_EN()		(RCC->APB2ENR |= (1 << 5) | (1 << 0))
 #define AFIOE_PCLK_EN()		(RCC->APB2ENR |= (1 << 6) | (1 << 0))
+
+
+/*
+ * Clock Enable/Disable Macros for SPIx peripherals
+ */
+#define SP1_PCLK_EN()		(RCC->APB2ENR |= (1 << 12))
+#define SP2_PCLK_EN()		(RCC->APB1ENR |= (1 << 14))
+#define SP3_PCLK_EN()		(RCC->APB1ENR |= (1 << 15))
+
+#define SP1_PCLK_DI()		(RCC->APB2ENR &= ~(1 << 12))
+#define SP2_PCLK_DI()		(RCC->APB1ENR &= ~(1 << 14))
+#define SP3_PCLK_DI()		(RCC->APB1ENR &= ~(1 << 15))
 
 
 /*
@@ -258,8 +302,58 @@ typedef struct
 #define FLAG_SET 			SET
 
 
+
+/******************************************************************************************
+ *Bit position definitions of SPI peripheral
+ ******************************************************************************************/
+/*
+ * Bit position definitions SPI_CR1
+ */
+#define SPI_CR1_CPHA     				 0
+#define SPI_CR1_CPOL      				 1
+#define SPI_CR1_MSTR     				 2
+#define SPI_CR1_BR   					 3
+#define SPI_CR1_SPE     				 6
+#define SPI_CR1_LSBFIRST   			 	 7
+#define SPI_CR1_SSI     				 8
+#define SPI_CR1_SSM      				 9
+#define SPI_CR1_RXONLY      		 	10
+#define SPI_CR1_DFF     			 	11
+#define SPI_CR1_CRCNEXT   			 	12
+#define SPI_CR1_CRCEN   			 	13
+#define SPI_CR1_BIDIOE     			 	14
+#define SPI_CR1_BIDIMODE      			15
+
+/*
+ * Bit position definitions SPI_CR2
+ */
+#define SPI_CR2_RXDMAEN		 			0
+#define SPI_CR2_TXDMAEN				 	1
+#define SPI_CR2_SSOE				 	2
+#define SPI_CR2_FRF						4
+#define SPI_CR2_ERRIE					5
+#define SPI_CR2_RXNEIE				 	6
+#define SPI_CR2_TXEIE					7
+
+
+/*
+ * Bit position definitions SPI_SR
+ */
+#define SPI_SR_RXNE						0
+#define SPI_SR_TXE				 		1
+#define SPI_SR_CHSIDE				 	2
+#define SPI_SR_UDR					 	3
+#define SPI_SR_CRCERR				 	4
+#define SPI_SR_MODF					 	5
+#define SPI_SR_OVR					 	6
+#define SPI_SR_BSY					 	7
+#define SPI_SR_FRE					 	8
+
+
+
 #include "stm32f103xx_rcc_driver.h"
 #include "stm32f103xx_gpio_driver.h"
+#include "stm32f103xx_spi_driver.h"
 
 
 #endif /* INC_STM32F103XX_H_ */
