@@ -3,20 +3,15 @@
 #include "stm32f103xx.h"
 
 
-SPI_Handle_t SPI1handle;
-
-#define MAX_LEN 500
-char RcvBuff[MAX_LEN];
-
-volatile char ReadByte;
-volatile uint8_t recvStop = 0;
-volatile uint8_t dataAvailable = 0; /*This flag will be set in the interrupt handler of the Arduino interrupt GPIO */
+#define MY_ADDR 0x61;
+#define SLAVE_ADDR  0x68
 
 /*
- * PA6 --> SPI1_MISO
- * PA7 --> SPI1_MOSI
- * PA5 --> SPI1_SCLK
- * PA4 --> SPI2_NSS
+ * I2C1_SCL = PB6
+ * I2C1_SDA = PB7
+ *
+ * I2C2_SCL = PB10
+ * I2C2_SDA = PB11
  */
 
 void delay(void)
@@ -26,148 +21,92 @@ void delay(void)
 
 void indicate()
 {
-	GPIO_WriteToOutputPin(GPIOB, GPIO_PIN_NO_0, SET);
+	GPIO_WriteToOutputPin(GPIOB, GPIO_PIN_NO_10, SET);
 	delay();
-	GPIO_WriteToOutputPin(GPIOB, GPIO_PIN_NO_0, RESET);
+	GPIO_WriteToOutputPin(GPIOB, GPIO_PIN_NO_10, RESET);
 }
 
-/*This function configures the gpio pin over which SPI peripheral issues data available interrupt */
-void Slave_GPIO_InterruptPinInit(void)
+I2C_Handle_t I2C1Handle;
+
+//some data
+uint8_t some_data[] = "Testing the I2C master Tx\n";
+
+void I2C1_GPIOInits(void)
 {
-	GPIO_Handle_t spiINTpin;
-	memset(&spiINTpin,0,sizeof(spiINTpin));
+	GPIO_Handle_t I2C1Pins;
 
-	spiINTpin.pGPIOx = GPIOB;
-	spiINTpin.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_5;
-	spiINTpin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IT_FT;
+	/*Note : External pull-up resistors are used */
+	I2C1Pins.pGPIOx = GPIOB;
+	I2C1Pins.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALT_PP;
 
-	GPIO_Interrupt_Setup(&spiINTpin,IRQ_NO_EXTI9_5,5, ENABLE);
+	//SCL
+	AFIO_PeriClockControl(I2C1Pins.pGPIOx, ENABLE);
+	I2C1Pins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_6;
+	GPIO_Init(&I2C1Pins);
+
+	//SDA
+	I2C1Pins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_7;
+	GPIO_Init(&I2C1Pins);
 
 }
 
+void I2C1_Inits(void)
+{
+	I2C1Handle.pI2Cx = I2C1;
+	I2C1Handle.I2C_Config.I2C_AckControl = I2C_ACK_ENABLE;
+	I2C1Handle.I2C_Config.I2C_DeviceAddress = MY_ADDR;
+	I2C1Handle.I2C_Config.I2C_FMDutyCycle = I2C_FM_DUTY_2;
+	I2C1Handle.I2C_Config.I2C_SCLSpeed = I2C_SCL_SPEED_SM;
 
-int main(void)
+	I2C_Init(&I2C1Handle);
+}
+
+void Button_Init(void)
+{
+	GPIO_Handle_t Btn;
+
+	Btn.pGPIOx = GPIOB;
+	Btn.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IN_PP;
+	Btn.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_0;
+
+	GPIO_Init(&Btn);
+}
+
+void LED_Init(void)
 {
 	GPIO_Handle_t LED;
 
 	LED.pGPIOx = GPIOB;
 	LED.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_OUT_PP;
-	LED.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_0;
+	LED.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_10;
+
 	GPIO_Init(&LED);
+}
 
-	Slave_GPIO_InterruptPinInit();
+int main(void)
+{
+	Button_Init();
+	LED_Init();
 
-	GPIO_WriteToOutputPin(LED.pGPIOx, GPIO_PIN_NO_0, RESET);
+	I2C1_GPIOInits();
+	I2C1_Inits();
 
-
-	//--------Initialize SPI pins
-	GPIO_Handle_t SPIPins;
-	SPIPins.pGPIOx = GPIOA;
-	SPIPins.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALT_PP;
-	//SCLK
-	SPIPins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_5;
-	AFIO_PeriClockControl(SPIPins.pGPIOx, ENABLE);
-	GPIO_Init(&SPIPins);
-	//MOSI
-	SPIPins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_7;
-	GPIO_Init(&SPIPins);
-	//MISO
-	SPIPins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_6;
-	GPIO_Init(&SPIPins);
-	//NSS
-	SPIPins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_4;
-	GPIO_Init(&SPIPins);
-
-	//--------Initialize SPI peripheral
-
-	SPI1handle.pSPIx = SPI1;
-	SPI1handle.SPIConfig.SPI_BusConfig = SPI_BUS_CONFIG_FD;
-	SPI1handle.SPIConfig.SPI_DeviceMode = SPI_MASTER_MODE;
-	SPI1handle.SPIConfig.SPI_SclkSpeed = SPI_SCLK_SPEED_DIV32; //SPI_SCLK_SPEED_DIV8 generated sclk of 2MHz
-	SPI1handle.SPIConfig.SPI_DFF = SPI_DFF_8BITS;
-	SPI1handle.SPIConfig.SPI_CPOL = SPI_CPOL_LOW;
-	SPI1handle.SPIConfig.SPI_CPHA = SPI_CPHA_LOW;
-	SPI1handle.SPIConfig.SPI_SSM = SPI_SSM_DI; // Hardware slave management enabled for NSS pin
-
-	SPI_Init(&SPI1handle);
-	SPI_SSOEConfig(SPI1, ENABLE);
-	SPI_IRQInterruptConfig(IRQ_NO_SPI1, ENABLE);
-
-
-
-	uint8_t dummy = 0xff;
-	printf("started\n");
-
-
+	//enable i2c peripheral
+	I2C_PeripheralControl(I2C1, ENABLE);
 
 	while(1)
 	{
-		recvStop = 0;
-
-		while(!dataAvailable); //wait till data available interrupt frame transmitter device(slave)
-
-
-		GPIO_IRQInterruptConfig(IRQ_NO_EXTI9_5, DISABLE);
-		//enable the SPI1 peripheral
-		SPI_PeripheralControl(SPI1, ENABLE);
-
-		while(!recvStop)
-		{
-			/* fetch the data from the SPI peripheral byte by byte in interrupt mode */
-			while( SPI_SendDataIT(&SPI1handle, &dummy, 1) == SPI_BUSY_IN_TX);
-			while( SPI_ReceiveDataIT(&SPI1handle, &ReadByte, 1)  == SPI_BUSY_IN_RX);
-		}
-
-		// confirm SPI is not busy
-		while( SPI_GetFlagStatus(SPI1,SPI_BUSY_FLAG) );
-
-		//Disable the SPI2 peripheral
-		SPI_PeripheralControl(SPI1,DISABLE);
-
-		printf("Rcvd data = %s\n",RcvBuff);
+		//wait till button is pressed
+		while( ! GPIO_ReadFromInputPin(GPIOB,GPIO_PIN_NO_0) );
 		indicate();
 
-		dataAvailable = 0;
+		//delay();
 
-		GPIO_IRQInterruptConfig(IRQ_NO_EXTI9_5,ENABLE);
+		I2C_MasterSendData(&I2C1Handle, some_data,strlen((char*)some_data), SLAVE_ADDR, 0);
 
-//		if(GPIO_ReadFromInputPin(GPIOB, GPIO_PIN_NO_7) == 1)
-//		{
-//		}
 	}
 
 	return 0;
 }
 
-/* Runs when a data byte is received from the peripheral over SPI*/
-void SPI1_IRQHandler(void)
-{
-	SPI_IRQHandling(&SPI1handle);
-}
-
-void SPI_ApplicationEventCallback(SPI_Handle_t *pSPIHandle,uint8_t AppEv)
-{
-	static uint32_t i = 0;
-
-	/* In the RX complete event , copy data in to rcv buffer . '\0' indicates end of message(rcvStop = 1) */
-	if(AppEv == SPI_EVENT_RX_CMPLT)
-	{
-		RcvBuff[i++] = ReadByte;
-		if(ReadByte == '\0' || (i == MAX_LEN))
-		{
-			recvStop = 1;
-			RcvBuff[i-1] = '\0';
-			i=0;
-		}
-
-	}
-}
-
-/* Slave data available interrupt handler */
-void EXTI9_5_IRQHandler(void)
-{
-	GPIO_IRQHandling(GPIO_PIN_NO_5); // clear the pending event from the EXTI line
-	dataAvailable = 1;
-	//indicate();
-}
 

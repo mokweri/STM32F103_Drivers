@@ -49,8 +49,8 @@ typedef struct
 /*
  * @I2C_SCLSpeed
  */
-#define I2C_SCL_SPEED_SM 	100000
-#define I2C_SCL_SPEED_FM4K 	400000
+#define I2C_SCL_SPEED_SM 	100000 //Standard-mode (Sm), with a bit rate up to 100 kbit/s
+#define I2C_SCL_SPEED_FM4K 	400000 // Fast-mode (Fm), with a bit rate up to 400 kbit/s
 #define I2C_SCL_SPEED_FM2K  200000
 
 
