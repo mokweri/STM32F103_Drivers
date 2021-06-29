@@ -37,7 +37,7 @@ void I2C1_GPIOInits(void)
 
 	/*Note : External pull-up resistors are used */
 	I2C1Pins.pGPIOx = GPIOB;
-	I2C1Pins.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALT_PP;
+	I2C1Pins.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALT_OD;
 
 	//SCL
 	AFIO_PeriClockControl(I2C1Pins.pGPIOx, ENABLE);
