@@ -137,9 +137,9 @@
                         					
                     </folderInfo>
                     					
-                    <fileInfo id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.69015119.1039501716" name="spi_comm_test.c" rcbsApplicability="disable" resourcePath="Src/spi_comm_test.c" toolsToInvoke="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1674313097.1743996347">
+                    <fileInfo id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.69015119.710372687" name="i2c_texting1.c" rcbsApplicability="disable" resourcePath="Src/i2c_texting1.c" toolsToInvoke="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1674313097.1442701887">
                         						
-                        <tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1674313097.1743996347" name="MCU GCC Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1674313097"/>
+                        <tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1674313097.1442701887" name="MCU GCC Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1674313097"/>
                         					
                     </fileInfo>
                     					
@@ -147,7 +147,7 @@
                         						
                         <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc"/>
                         						
-                        <entry excluding="spi_comm_test.c|spi_cmd_test.c|spi_tx_test.c|gpio_tests.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src"/>
+                        <entry excluding="i2c_texting1.c|spi_comm_test.c|spi_cmd_test.c|spi_tx_test.c|gpio_tests.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src"/>
                         						
                         <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Startup"/>
                         						
