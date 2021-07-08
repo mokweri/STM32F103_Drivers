@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "stm32f103xx.h"
+#include "lcd.h"
 
 
 //Flag variable
@@ -92,6 +93,10 @@ void LED_Init(void)
 
 int main(void)
 {
+	lcd_init();
+
+	LCD_PrintString("Sayari", 0, 0);
+
 	uint8_t commandcode;
 	uint8_t len;
 
@@ -146,6 +151,7 @@ int main(void)
 		rcv_buf[len+1] = '\0';
 
 		//printf("Data: %s",rcv_buf);
+		LCD_PrintString((char *)rcv_buf, 0, 1);
 		rxComplt = RESET;
 
 	}
