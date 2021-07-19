@@ -133,7 +133,7 @@ typedef struct
 /*
  * Peripheral Clock setup
  */
-void USART_PeriClockControl(USART_RegDef_t *pUSARTx, uint8_t EnOrDi);
+void USART_PeriClockControl(USART_RegDef_t *pUSARTx, uint8_t EnorDi);
 
 /*
  * Init and De-init
