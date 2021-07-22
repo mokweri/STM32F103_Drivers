@@ -82,7 +82,6 @@ int main(void)
 {
 	lcd_init();
 	LCD_PrintString("Sayari", 0, 0);
-
 	Button_Init();
 	LED_Init();
 

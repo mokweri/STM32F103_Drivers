@@ -44,8 +44,6 @@ uint32_t RCC_GetPCLK1Value(void)
 		ahbp = AHB_PreScaler[temp-8];
 	}
 
-
-
 	//APB1
 	temp = ((RCC->CFGR >> 10 ) & 0x7);
 

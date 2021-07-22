@@ -14,12 +14,12 @@ void USART_SetBaudRate(USART_RegDef_t *pUSARTx, uint32_t BaudRate)
 	//Variable to hold the APB clock
 	uint32_t PCLKx;
 
-	uint32_t usartdiv;
-
-	//variables to hold Mantissa and Fraction values
-	uint32_t M_part,F_part;
-
-	uint32_t tempreg=0;
+//	uint32_t usartdiv;
+//
+//	//variables to hold Mantissa and Fraction values
+//	uint32_t M_part,F_part;
+//
+//	uint32_t tempreg=0;
 
 	//Get the value of APB bus clock in to the variable PCLKx
 
@@ -31,44 +31,36 @@ void USART_SetBaudRate(USART_RegDef_t *pUSARTx, uint32_t BaudRate)
 	  PCLKx = RCC_GetPCLK1Value();
 	}
 
-	//Check for OVER8 configuration bit
-	if(pUSARTx->CR1 & (1 << USART_CR1_OVER8))
-	{
-	   //OVER8 = 1 , over sampling by 8
-	   usartdiv = ((25 * PCLKx) / (2 *BaudRate));
-	}else
-	{
-	   //over sampling by 16
-	   usartdiv = ((25 * PCLKx) / (4 *BaudRate));
-	}
+//------------------
+#define USART_DIV(_PCLK_, _BAUD_)      (((_PCLK_)*25U)/(4U*(_BAUD_)))
 
-	//Calculate the Mantissa part
-	M_part = usartdiv/100;
+#define USART_DIVMANT(_PCLK_, _BAUD_)  (USART_DIV((_PCLK_), (_BAUD_))/100U)
 
-	//Place the Mantissa part in appropriate bit position . refer USART_BRR
-	tempreg |= M_part << 4;
+#define USART_DIVFRAQ(_PCLK_, _BAUD_)  ((((USART_DIV((_PCLK_), (_BAUD_)) - (USART_DIVMANT((_PCLK_), (_BAUD_)) * 100U)) * 16U) + 50U) / 100U)
 
-	//Extract the fraction part
-	F_part = (usartdiv - (M_part * 100));
+  /* UART BRR = mantissa + overflow + fraction
+              = (UART DIVMANT << 4) + ((UART DIVFRAQ & 0xF0) << 1) + (UART DIVFRAQ & 0x0FU) */
 
-	//Calculate the final fractional
-	if(pUSARTx->CR1 & ( 1 << USART_CR1_OVER8))
-	{
-	  //OVER8 = 1 , over sampling by 8
-	  F_part = ((( F_part * 8)+ 50) / 100)& ((uint8_t)0x07);
+#define USART_BRR(_PCLK_, _BAUD_)      (((USART_DIVMANT((_PCLK_), (_BAUD_)) << 4U) + \
+                                        ((USART_DIVFRAQ((_PCLK_), (_BAUD_)) & 0xF0U) << 1U)) + \
+                                         (USART_DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0FU))
+//------------------------------
 
-	}else
-	{
-	   //over sampling by 16
-	   F_part = ((( F_part * 16)+ 50) / 100) & ((uint8_t)0x0F);
+//	usartdiv = ((25 * PCLKx) / (4 *BaudRate));
+//
+//	//Calculate the Mantissa part
+//	M_part = usartdiv/100;
+//
+//	//Extract the fraction part
+//	F_part = ((((usartdiv - (M_part * 100))*16) + 50) /100);
+//
+//	tempreg = (M_part << 4) + ((F_part & (uint8_t)0xF0U) << 1) + (F_part & (uint8_t)0x0FU);
+//
+//	//copy the value of tempreg in to BRR register
+//	pUSARTx->BRR = tempreg;
 
-	}
+	pUSARTx->BRR = USART_BRR(PCLKx,BaudRate);
 
-	//Place the fractional part in appropriate bit position . refer USART_BRR
-	tempreg |= F_part;
-
-	//copy the value of tempreg in to BRR register
-	pUSARTx->BRR = tempreg;
 
 }
 
@@ -120,10 +112,23 @@ void USART_Init(USART_Handle_t *pUSARTHandle)
 	//Temporary variable
 	uint32_t tempreg=0;
 
-	/********************** Configuration of CR1*****************************/
-
 	//Implement the code to enable the Clock for given USART peripheral
 	USART_PeriClockControl(pUSARTHandle->pUSARTx,ENABLE);
+
+	pUSARTHandle->pUSARTx->CR1 = tempreg;
+
+	/*********************Configuration of CR2 *************************/
+
+		tempreg=0;
+
+		//Implement the code to configure the number of stop bits inserted during USART frame transmission
+		tempreg |= pUSARTHandle->USART_Config.USART_NoOfStopBits << USART_CR2_STOP;
+
+		//Program the CR2 register
+		pUSARTHandle->pUSARTx->CR2 = tempreg;
+
+	/********************** Configuration of CR1*****************************/
+
 
 	//Enable USART Tx and Rx engines according to the USART_Mode configuration item
 	if ( pUSARTHandle->USART_Config.USART_Mode == USART_MODE_ONLY_RX)
@@ -165,16 +170,6 @@ void USART_Init(USART_Handle_t *pUSARTHandle)
 
    //Program the CR1 register
 	pUSARTHandle->pUSARTx->CR1 = tempreg;
-
-/*********************Configuration of CR2 *************************/
-
-	tempreg=0;
-
-	//Implement the code to configure the number of stop bits inserted during USART frame transmission
-	tempreg |= pUSARTHandle->USART_Config.USART_NoOfStopBits << USART_CR2_STOP;
-
-	//Program the CR2 register
-	pUSARTHandle->pUSARTx->CR2 = tempreg;
 
 
 /*********************Configuration of CR3 *************************/

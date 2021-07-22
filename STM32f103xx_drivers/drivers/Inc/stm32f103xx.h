@@ -509,7 +509,6 @@ typedef struct
 #define USART_CR1_WAKE  				11
 #define USART_CR1_M 					12
 #define USART_CR1_UE 					13
-#define USART_CR1_OVER8  				15
 
 
 
